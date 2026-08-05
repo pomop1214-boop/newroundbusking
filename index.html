@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>N.ROUND 버스킹 선곡 신청</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --cream:#FFF8F2;
+    --ink:#2B2420;
+    --ink-soft:#6E645C;
+    --coral:#FF6B54;
+    --coral-dark:#E1503A;
+    --mint:#2FBFAE;
+    --mint-dark:#1B9A8B;
+    --salmon:#FFC9B4;
+    --muted:#BDB3AA;
+    --muted-bg:#F1ECE7;
+    --card:#FFFFFF;
+    --line:#F0E1D4;
+    --shadow: 0 6px 20px rgba(43,36,32,0.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #FFEDE3 0%, transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, #E7FAF6 0%, transparent 55%),
+      var(--cream);
+    color:var(--ink);
+    font-family:'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height:1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:28px 18px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    color:var(--coral-dark);
+    background:#FFF0EA;
+    border:1px solid #FFD9CB;
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:'Gaegu', sans-serif;
+    font-weight:700;
+    font-size:34px;
+    margin:0 0 8px;
+    color:var(--ink);
+    line-height:1.25;
+  }
+  h1 span{ color:var(--coral); }
+  .sub{
+    font-size:14.5px;
+    color:var(--ink-soft);
+    margin:0;
+  }
+
+  /* ---------- Name field ---------- */
+  .name-field{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-bottom:20px;
+    box-shadow:var(--shadow);
+  }
+  .name-field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .name-field input{
+    width:100%;
+    border:none;
+    outline:none;
+    font-size:17px;
+    font-weight:700;
+    font-family:'Pretendard', sans-serif;
+    color:var(--ink);
+    background:transparent;
+  }
+  .name-field input::placeholder{ color:#CFC5BC; font-weight:500; }
+
+  /* ---------- Song list ---------- */
+  .list-label{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin:0 4px 10px;
+  }
+  .list-label b{ font-size:15px; }
+  .list-label span{ font-size:12.5px; color:var(--ink-soft); }
+
+  .song-row{
+    display:flex;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    margin-bottom:12px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    position:relative;
+    animation: rowIn .35s ease both;
+  }
+  @keyframes rowIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .row-main{
+    flex:1;
+    min-width:0;
+    padding:14px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .row-index{
+    font-family:'Gaegu', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    color:var(--coral-dark);
+    margin-bottom:-2px;
+  }
+  .row-main input{
+    width:100%;
+    border:none;
+    outline:none;
+    background:transparent;
+    font-family:'Pretendard', sans-serif;
+    color:var(--ink);
+  }
+  .row-main input.title{
+    font-size:16px;
+    font-weight:700;
+  }
+  .row-main input.artist{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .row-main input::placeholder{ color:#D8CEC5; }
+
+  .remove-btn{
+    align-self:flex-start;
+    margin-top:2px;
+    font-size:11.5px;
+    color:var(--muted);
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .remove-btn:hover{ color:var(--coral-dark); }
+
+  /* ticket stub perforation */
+  .stub{
+    width:104px;
+    flex-shrink:0;
+    position:relative;
+    border-left:2px dashed #E7D9CB;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:10px 8px;
+    text-align:center;
+    background:#FFFDFB;
+  }
+  .stub::before, .stub::after{
+    content:"";
+    position:absolute;
+    left:-9px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--cream);
+    border:1px solid var(--line);
+  }
+  .stub::before{ top:-9px; }
+  .stub::after{ bottom:-9px; }
+
+  .eq{
+    display:flex;
+    align-items:flex-end;
+    gap:3px;
+    height:26px;
+  }
+  .eq i{
+    display:block;
+    width:5px;
+    border-radius:3px;
+    background:var(--muted);
+    height:6px;
+    transition: height .35s ease, background .35s ease;
+  }
+  .stub.waiting .eq i{ background:#E3DAD1; }
+  .stub.loading .eq i{ animation: bounce 0.9s ease-in-out infinite; background:var(--muted); }
+  .stub.loading .eq i:nth-child(1){ animation-delay:0s; }
+  .stub.loading .eq i:nth-child(2){ animation-delay:0.15s; }
+  .stub.loading .eq i:nth-child(3){ animation-delay:0.3s; }
+  @keyframes bounce{
+    0%,100%{ height:6px; }
+    50%{ height:22px; }
+  }
+
+  .stub.level-상 .eq i{ background:var(--coral); }
+  .stub.level-상 .eq i:nth-child(1){ height:16px; }
+  .stub.level-상 .eq i:nth-child(2){ height:24px; }
+  .stub.level-상 .eq i:nth-child(3){ height:20px; }
+
+  .stub.level-중 .eq i{ background:var(--mint); }
+  .stub.level-중 .eq i:nth-child(1){ height:10px; }
+  .stub.level-중 .eq i:nth-child(2){ height:17px; }
+  .stub.level-중 .eq i:nth-child(3){ height:12px; }
+
+  .stub.level-하 .eq i{ background:var(--muted); }
+  .stub.level-하 .eq i:nth-child(1){ height:6px; }
+  .stub.level-하 .eq i:nth-child(2){ height:10px; }
+  .stub.level-하 .eq i:nth-child(3){ height:7px; }
+
+  .stub .label{
+    font-family:'Gaegu', sans-serif;
+    font-weight:700;
+    font-size:15px;
+  }
+  .stub.level-상 .label{ color:var(--coral-dark); }
+  .stub.level-중 .label{ color:var(--mint-dark); }
+  .stub.level-하 .label{ color:#8A8078; }
+  .stub .reason{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    line-height:1.3;
+  }
+  .stub .placeholder{
+    font-size:11px;
+    color:#C7BDB4;
+  }
+  .stub .retry{
+    font-size:10.5px;
+    background:none;
+    border:none;
+    color:var(--coral-dark);
+    text-decoration:underline;
+    cursor:pointer;
+    padding:0;
+  }
+
+  /* ---------- Add row button ---------- */
+  .add-btn{
+    width:100%;
+    padding:13px;
+    border-radius:14px;
+    border:1.5px dashed #E2B7A6;
+    background:transparent;
+    color:var(--coral-dark);
+    font-weight:700;
+    font-size:14.5px;
+    cursor:pointer;
+    margin:6px 0 24px;
+  }
+  .add-btn:hover{ background:#FFF3ED; }
+
+  /* ---------- Summary / submit ---------- */
+  .summary{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+  .summary-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .summary-counts{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .count-chip{
+    flex:1;
+    text-align:center;
+    padding:10px 4px;
+    border-radius:12px;
+    background:var(--muted-bg);
+  }
+  .count-chip b{
+    display:block;
+    font-family:'Gaegu', sans-serif;
+    font-size:22px;
+  }
+  .count-chip span{ font-size:11px; color:var(--ink-soft); }
+  .count-chip.상 b{ color:var(--coral-dark); }
+  .count-chip.중 b{ color:var(--mint-dark); }
+  .count-chip.하 b{ color:#8A8078; }
+
+  .copy-btn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg, var(--coral), var(--coral-dark));
+    color:#fff;
+    font-size:15.5px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 8px 18px rgba(255,107,84,0.28);
+  }
+  .copy-btn:disabled{
+    background:#E5DED7;
+    box-shadow:none;
+    color:#A79E95;
+    cursor:not-allowed;
+  }
+  .copy-btn.copied{ background:linear-gradient(135deg, var(--mint), var(--mint-dark)); box-shadow:0 8px 18px rgba(47,191,174,0.28); }
+
+  .hint{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .song-row{ animation:none; }
+    .stub.loading .eq i{ animation:none; }
+  }
+
+  @media (max-width:380px){
+    h1{ font-size:28px; }
+    .stub{ width:88px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">🎤 N.ROUND 버스킹 선곡 신청</div>
+    <h1>우리 무대에 오를<br><span>다섯 곡</span>을 골라주세요</h1>
+    <p class="sub">곡과 가수를 적으면, 유튜브 조회수를 기반으로 대중성을 상 · 중 · 하로 자동 판단해드려요</p>
+  </header>
+
+  <div class="name-field">
+    <label for="participant-name">신청자 이름</label>
+    <input id="participant-name" type="text" placeholder="이름을 입력해주세요" />
+  </div>
+
+  <div class="list-label">
+    <b>선곡 리스트</b>
+    <span id="row-count-label">최소 5곡</span>
+  </div>
+
+  <div id="song-list"></div>
+
+  <button class="add-btn" id="add-row-btn" type="button">+ 곡 추가하기</button>
+
+  <div class="summary">
+    <div class="summary-title">대중성 분석 결과</div>
+    <div class="summary-counts">
+      <div class="count-chip 상"><b id="count-상">0</b><span>상</span></div>
+      <div class="count-chip 중"><b id="count-중">0</b><span>중</span></div>
+      <div class="count-chip 하"><b id="count-하">0</b><span>하</span></div>
+    </div>
+    <button class="copy-btn" id="copy-btn" disabled type="button">이름 · 곡 5개 이상 입력하면 복사할 수 있어요</button>
+    <p class="hint">복사한 내용을 카톡방에 붙여넣어 운영진에게 보내주세요 🙌</p>
+  </div>
+
+</div>
+
+<script>
+const API_ENDPOINT = '/api/analyze';
+const MIN_SONGS = 5;
+
+const songListEl = document.getElementById('song-list');
+const addRowBtn = document.getElementById('add-row-btn');
+const nameInput = document.getElementById('participant-name');
+const copyBtn = document.getElementById('copy-btn');
+const rowCountLabel = document.getElementById('row-count-label');
+
+let rows = [];
+let rowSeq = 0;
+
+function createRow(){
+  const id = 'row-' + (++rowSeq);
+  rows.push({ id, title:'', artist:'', level:null, reason:'', status:'idle' });
+  renderRows();
+}
+
+function removeRow(id){
+  if(rows.length <= MIN_SONGS) return;
+  rows = rows.filter(r => r.id !== id);
+  renderRows();
+}
+
+function renderRows(){
+  songListEl.innerHTML = '';
+  rows.forEach((row, idx) => {
+    const el = document.createElement('div');
+    el.className = 'song-row';
+    el.innerHTML = `
+      <div class="row-main">
+        <div class="row-index">${idx + 1}번째 곡</div>
+        <input class="title" type="text" placeholder="곡 제목" value="${escapeHtml(row.title)}" data-id="${row.id}" data-field="title" />
+        <input class="artist" type="text" placeholder="가수명" value="${escapeHtml(row.artist)}" data-id="${row.id}" data-field="artist" />
+        ${rows.length > MIN_SONGS ? `<button class="remove-btn" data-remove="${row.id}" type="button">이 곡 삭제</button>` : ''}
+      </div>
+      <div class="stub ${stubClass(row)}" data-stub="${row.id}">
+        ${renderStubInner(row)}
+      </div>
+    `;
+    songListEl.appendChild(el);
+  });
+
+  rowCountLabel.textContent = rows.length + '곡 (최소 ' + MIN_SONGS + ')';
+
+  // bind events
+  songListEl.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', onFieldInput);
+    input.addEventListener('blur', onFieldBlur);
+  });
+  songListEl.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => removeRow(btn.dataset.remove));
+  });
+  songListEl.querySelectorAll('[data-retry]').forEach(btn => {
+    btn.addEventListener('click', () => analyzeRow(btn.dataset.retry));
+  });
+
+  updateSummary();
+}
+
+function stubClass(row){
+  if(row.status === 'loading') return 'loading';
+  if(row.status === 'done' && row.level) return 'level-' + row.level;
+  if(row.status === 'error') return '';
+  return 'waiting';
+}
+
+function renderStubInner(row){
+  const eq = `<div class="eq"><i></i><i></i><i></i></div>`;
+  if(row.status === 'loading'){
+    return `${eq}<span class="placeholder">분석 중…</span>`;
+  }
+  if(row.status === 'done' && row.level){
+    return `${eq}<span class="label">${row.level}</span><span class="reason">${escapeHtml(row.reason || '')}</span>`;
+  }
+  if(row.status === 'error'){
+    return `${eq}<span class="placeholder">분석 실패</span><button class="retry" data-retry="${row.id}" type="button">다시 시도</button>`;
+  }
+  return `${eq}<span class="placeholder">곡·가수 입력 시<br>자동 분석</span>`;
+}
+
+function onFieldInput(e){
+  const { id, field } = e.target.dataset;
+  const row = rows.find(r => r.id === id);
+  if(!row) return;
+  row[field] = e.target.value;
+  updateSummary();
+}
+
+function onFieldBlur(e){
+  const { id } = e.target.dataset;
+  const row = rows.find(r => r.id === id);
+  if(!row) return;
+  if(row.title.trim() && row.artist.trim() && row.status !== 'loading'){
+    analyzeRow(id);
+  }
+}
+
+async function analyzeRow(id){
+  const row = rows.find(r => r.id === id);
+  if(!row) return;
+  row.status = 'loading';
+  updateStubOnly(row);
+
+  try{
+    const res = await fetch(API_ENDPOINT, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ title: row.title.trim(), artist: row.artist.trim() })
+    });
+    if(!res.ok) throw new Error('요청 실패');
+    const data = await res.json();
+    if(!data.level) throw new Error('형식 오류');
+    row.level = data.level;
+    row.reason = data.reason || '';
+    row.status = 'done';
+  }catch(err){
+    row.status = 'error';
+  }
+  updateStubOnly(row);
+  updateSummary();
+}
+
+function updateStubOnly(row){
+  const stubEl = songListEl.querySelector(`[data-stub="${row.id}"]`);
+  if(!stubEl) return;
+  stubEl.className = 'stub ' + stubClass(row);
+  stubEl.innerHTML = renderStubInner(row);
+  const retryBtn = stubEl.querySelector('[data-retry]');
+  if(retryBtn) retryBtn.addEventListener('click', () => analyzeRow(retryBtn.dataset.retry));
+}
+
+function updateSummary(){
+  const counts = { 상:0, 중:0, 하:0 };
+  rows.forEach(r => { if(r.level) counts[r.level]++; });
+  document.getElementById('count-상').textContent = counts['상'];
+  document.getElementById('count-중').textContent = counts['중'];
+  document.getElementById('count-하').textContent = counts['하'];
+
+  const filledRows = rows.filter(r => r.title.trim() && r.artist.trim());
+  const ready = nameInput.value.trim() && filledRows.length >= MIN_SONGS;
+
+  copyBtn.disabled = !ready;
+  copyBtn.textContent = ready
+    ? '제출 내용 복사하기 📋'
+    : '이름 · 곡 5개 이상 입력하면 복사할 수 있어요';
+}
+
+function buildSubmissionText(){
+  const name = nameInput.value.trim();
+  const lines = rows
+    .filter(r => r.title.trim())
+    .map((r, i) => {
+      const levelTxt = r.level ? ` (대중성 ${r.level})` : '';
+      return `${i + 1}. ${r.title.trim()}${r.artist.trim() ? ' - ' + r.artist.trim() : ''}${levelTxt}`;
+    });
+  return `🎤 버스킹 선곡 신청 - ${name}\n\n` + lines.join('\n');
+}
+
+function escapeHtml(str){
+  return String(str || '').replace(/[&<>"']/g, s => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[s]));
+}
+
+addRowBtn.addEventListener('click', createRow);
+nameInput.addEventListener('input', updateSummary);
+
+copyBtn.addEventListener('click', async () => {
+  if(copyBtn.disabled) return;
+  const text = buildSubmissionText();
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(err){
+    // fallback for in-app browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  copyBtn.classList.add('copied');
+  const original = '제출 내용 복사하기 📋';
+  copyBtn.textContent = '복사 완료! ✅';
+  setTimeout(() => {
+    copyBtn.classList.remove('copied');
+    updateSummary();
+  }, 1800);
+});
+
+// initial 5 rows
+for(let i = 0; i < MIN_SONGS; i++) createRow();
+</script>
+</body>
+</html>
