@@ -11,18 +11,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --cream:#FFF8F2;
-    --ink:#2B2420;
-    --ink-soft:#6E645C;
-    --coral:#FF6B54;
-    --coral-dark:#E1503A;
-    --mint:#2FBFAE;
-    --mint-dark:#1B9A8B;
-    --salmon:#FFC9B4;
-    --muted:#BDB3AA;
-    --muted-bg:#F1ECE7;
-    --card:#FFFFFF;
-    --line:#F0E1D4;
+    --cream:#FFF8F2; --ink:#2B2420; --ink-soft:#6E645C;
+    --coral:#FF6B54; --coral-dark:#E1503A;
+    --mint:#2FBFAE; --mint-dark:#1B9A8B;
+    --salmon:#FFC9B4; --muted:#BDB3AA; --muted-bg:#F1ECE7;
+    --card:#FFFFFF; --line:#F0E1D4;
     --shadow: 0 6px 20px rgba(43,36,32,0.06);
   }
   * { box-sizing: border-box; }
@@ -32,15 +25,13 @@
       radial-gradient(1200px 600px at 10% -10%, #FFEDE3 0%, transparent 60%),
       radial-gradient(1000px 500px at 110% 10%, #E7FAF6 0%, transparent 55%),
       var(--cream);
-    color:var(--ink);
-    font-family:'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-    line-height:1.5;
-    -webkit-tap-highlight-color: transparent;
+    color:var(--ink); font-family:'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height:1.5; -webkit-tap-highlight-color: transparent;
   }
   .wrap{ max-width:640px; margin:0 auto; padding:28px 18px 80px; }
   [hidden]{ display:none !important; }
 
-  header{ text-align:center; margin-bottom:28px; }
+  header{ text-align:center; margin-bottom:24px; }
   .eyebrow{
     display:inline-flex; align-items:center; gap:6px;
     font-size:13px; font-weight:700; letter-spacing:0.02em;
@@ -48,7 +39,7 @@
     padding:6px 14px; border-radius:999px; margin-bottom:14px;
   }
   h1{
-    font-family:'Gaegu', sans-serif; font-weight:700; font-size:32px;
+    font-family:'Gaegu', sans-serif; font-weight:700; font-size:30px;
     margin:0 0 8px; color:var(--ink); line-height:1.3;
   }
   h1 span{ color:var(--coral); }
@@ -64,6 +55,33 @@
     font-family:'Pretendard', sans-serif; color:var(--ink); background:transparent;
   }
   .name-field input::placeholder{ color:#CFC5BC; font-weight:500; }
+
+  .choice-btn{
+    display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left;
+    padding:18px 16px; border-radius:16px; border:1.5px solid var(--line); background:var(--card);
+    margin-bottom:12px; cursor:pointer; box-shadow:var(--shadow);
+  }
+  .choice-btn:hover{ border-color: var(--coral); background:#FFF6F2; }
+  .choice-btn .emoji{ font-size:22px; line-height:1; }
+  .choice-btn b{ display:block; font-size:15.5px; margin-bottom:2px; }
+  .choice-btn p{ margin:0; font-size:12.5px; color:var(--ink-soft); }
+
+  .rules-box{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px;
+    box-shadow:var(--shadow); font-size:13.5px; line-height:1.75; color:var(--ink); margin-bottom:16px;
+  }
+  .rules-box p{ margin:0 0 12px; }
+  .rules-box ol{ margin:0 0 4px; padding-left:20px; }
+  .rules-box li{ margin-bottom:5px; }
+  .rules-box .section-title{ font-family:'Gaegu', sans-serif; font-weight:700; font-size:16px; color:var(--coral-dark); margin:18px 0 8px; }
+  .rules-box .section-title:first-child{ margin-top:0; }
+
+  .confirm-btn{
+    width:100%; padding:15px; border:none; border-radius:14px;
+    background:linear-gradient(135deg, var(--coral), var(--coral-dark)); color:#fff;
+    font-size:15.5px; font-weight:700; cursor:pointer; box-shadow:0 8px 18px rgba(255,107,84,0.28);
+  }
+  .confirm-btn:disabled{ background:#E5DED7; box-shadow:none; color:#A79E95; cursor:not-allowed; }
 
   .list-label{ display:flex; align-items:baseline; justify-content:space-between; margin:0 4px 10px; }
   .list-label b{ font-size:15px; }
@@ -163,12 +181,16 @@
   .done-card h2{ font-family:'Gaegu', sans-serif; font-size:24px; margin:0 0 8px; }
   .done-card p{ font-size:13.5px; color:var(--ink-soft); margin:0; }
 
+  .admin-link-row{ text-align:center; margin-top:24px; }
+  .admin-link-row a{ font-size:12px; color:var(--ink-soft); text-decoration:underline; }
+
   @media (prefers-reduced-motion: reduce){
     .song-row{ animation:none; }
     .stub.loading .eq i{ animation:none; }
   }
-  @media (max-width:380px){ h1{ font-size:26px; } .stub{ width:88px; } }
+  @media (max-width:380px){ h1{ font-size:24px; } .stub{ width:88px; } }
 
+  /* ---------- Admin ---------- */
   .admin-wrap{ max-width:720px; margin:0 auto; padding:28px 18px 80px; }
   .admin-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .admin-header h1{ font-size:22px; margin:0; }
@@ -185,16 +207,20 @@
     width:100%; padding:11px; border:none; border-radius:10px; background:var(--coral-dark);
     color:#fff; font-weight:700; cursor:pointer;
   }
-  .admin-summary{ display:flex; gap:10px; margin-bottom:18px; }
-  .admin-chip{ flex:1; text-align:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 4px; }
+  .admin-summary{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .admin-chip{ flex:1; min-width:70px; text-align:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 4px; }
   .admin-chip b{ display:block; font-family:'Gaegu', sans-serif; font-size:22px; }
   .sub-card{
     background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px;
     margin-bottom:10px; box-shadow:var(--shadow);
   }
-  .sub-card-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .sub-card-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; gap:8px; }
   .sub-card-top b{ font-size:15px; }
-  .sub-card-top span{ font-size:11px; color:var(--ink-soft); }
+  .sub-card-top span{ font-size:11px; color:var(--ink-soft); white-space:nowrap; }
+  .status-tag{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; margin-right:6px; }
+  .status-tag.submitted{ background:#E3F7F4; color:var(--mint-dark); }
+  .status-tag.declined{ background:var(--muted-bg); color:#8A8078; }
+  .exp-tag{ font-size:10.5px; color:var(--ink-soft); }
   .sub-song{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-top:1px solid var(--muted-bg); font-size:13px; }
   .sub-song:first-of-type{ border-top:none; }
   .sub-song-name{ flex:1; min-width:0; }
@@ -213,49 +239,145 @@
 <body>
 
 <div class="wrap" id="main-view">
-  <header>
-    <div class="eyebrow">🎤 N.ROUND 버스킹 선곡 신청</div>
-    <h1>우리 무대에 오를<br><span>곡</span>을 골라주세요</h1>
-    <p class="sub">곡 제목을 적으면, 유튜브 조회수를 기반으로 대중성을 상 · 중 · 하로 자동 판단해드려요</p>
-  </header>
 
-  <div class="name-field">
-    <label for="participant-name">신청자 이름</label>
-    <input id="participant-name" type="text" placeholder="이름을 입력해주세요" />
-  </div>
+  <!-- STEP 1: 참여 여부 -->
+  <div id="step-gate">
+    <header>
+      <div class="eyebrow">🎤 N.ROUND 버스킹</div>
+      <h1>이번 버스킹,<br>함께 <span>참여</span>하실 건가요?</h1>
+      <p class="sub">참여 여부를 먼저 알려주세요</p>
+    </header>
 
-  <div class="list-label">
-    <b>선곡 리스트</b>
-    <span id="row-count-label">최소 2곡</span>
-  </div>
-
-  <div id="song-list"></div>
-
-  <button class="add-btn" id="add-row-btn" type="button">+ 곡 추가하기</button>
-
-  <div class="summary" id="summary-card">
-    <div class="summary-title">대중성 분석 결과</div>
-    <div class="summary-counts">
-      <div class="count-chip 상"><b id="count-상">0</b><span>상</span></div>
-      <div class="count-chip 중"><b id="count-중">0</b><span>중</span></div>
-      <div class="count-chip 하"><b id="count-하">0</b><span>하</span></div>
+    <div class="name-field">
+      <label for="gate-name-input">이름</label>
+      <input id="gate-name-input" type="text" placeholder="이름을 입력해주세요" />
     </div>
-    <button class="submit-btn" id="submit-btn" disabled type="button">이름 · 곡 2개 이상 입력하면 제출할 수 있어요</button>
-    <p class="error-msg" id="error-msg" hidden></p>
-    <p class="hint">제출하면 바로 운영진에게 전달돼요. 따로 카톡 보내지 않아도 돼요 🙌</p>
+
+    <button class="choice-btn" id="btn-participate" type="button">
+      <span class="emoji">🙋</span>
+      <span><b>참여할게요</b><p>이번 무대에 함께 설게요</p></span>
+    </button>
+    <button class="choice-btn" id="btn-decline" type="button">
+      <span class="emoji">😢</span>
+      <span><b>이번엔 어려울 것 같아요</b><p>다음 기회에 참여할게요</p></span>
+    </button>
+
+    <p class="error-msg" id="gate-error" hidden></p>
+
+    <div class="admin-link-row"><a href="#admin">관리자 페이지</a></div>
   </div>
 
-  <div class="done-card" id="done-card" hidden>
-    <div class="emoji">🎉</div>
-    <h2>제출 완료!</h2>
-    <p>선곡 신청이 저장됐어요. 무대에서 만나요!</p>
+  <!-- STEP 2: 불참 확인 -->
+  <div id="step-declined" hidden>
+    <div class="done-card">
+      <div class="emoji">🙏</div>
+      <h2>아쉽네요!</h2>
+      <p>다음 기회에 꼭 같이 공연해봐요 :)</p>
+    </div>
   </div>
 
-  <div style="text-align:center; margin-top:24px;">
-    <a href="#admin" style="font-size:12px; color:var(--ink-soft); text-decoration:underline;">관리자 페이지</a>
+  <!-- STEP 3: 버스킹 경험 여부 -->
+  <div id="step-experience" hidden>
+    <header>
+      <div class="eyebrow">🎤 N.ROUND 버스킹</div>
+      <h1>버스킹 경험이<br>있으신가요?</h1>
+      <p class="sub">경험에 따라 선곡 기준이 조금 달라요</p>
+    </header>
+
+    <button class="choice-btn" id="btn-first" type="button">
+      <span class="emoji">🌱</span>
+      <span><b>이번이 처음이에요</b><p>버스킹이 처음인 분들을 위한 기준을 안내해드려요</p></span>
+    </button>
+    <button class="choice-btn" id="btn-experienced" type="button">
+      <span class="emoji">🎸</span>
+      <span><b>이미 버스킹을 해봤어요</b><p>경험자 기준을 안내해드려요</p></span>
+    </button>
   </div>
+
+  <!-- STEP 4: 선곡 기준 확인 -->
+  <div id="step-rules" hidden>
+    <header>
+      <div class="eyebrow">🎤 N.ROUND 버스킹</div>
+      <h1>선곡 기준을<br>확인해주세요</h1>
+    </header>
+
+    <div class="rules-box" id="rules-first" hidden>
+      <p>솔로 1곡 듀엣 1곡으로 진행할 예정입니다 (상황에 따라 조정될 수 있는 점 참고 부탁드리겠습니다).</p>
+      <p>버스킹 점검은 공식적인 점검은 정기모임에 진행을 합니다.</p>
+      <p>시간이 안 맞거나 개인적인 사정에 의해서 점검을 못 받을 경우 모임장이 직접 관리 진행하고 있습니다. (형평성을 위해 핸디캡이 있을 수 있다는 점 참고바랍니다.)</p>
+      <p>버스킹을 처음 하는 부분에 있어서 선곡이 만약 어렵다고 생각하신다면 하고 싶은 곡 그리고 잘하는 곡을 여러 개 후보로 정해 오시면 운영진 혹은 멤버들과 같이 선곡 진행해드리고 있습니다.</p>
+      <p>선곡이 어렵다 하시는 분들은 최소 2개에서 최대 5개까지 선곡 해오시는 것을 추천드립니다.</p>
+      <div class="section-title">선곡 기준</div>
+      <ol>
+        <li>욕설 X</li>
+        <li>나만 알고 있는 곡 말고 대중성 높은 곡</li>
+        <li>무리하게 부르고 도전하기보다는 안정성 있게 부를 수 있는 곡</li>
+        <li>장르적인 부분이 강한 곡, 호불호가 너무 강한 장르 (EX. J-POP, 락 등) X</li>
+        <li>비긴어게인 버스킹 공연 참고하시는 걸 추천드립니다.</li>
+      </ol>
+      <p style="margin-bottom:0;">나 혼자가 아닌, 우리 뉴라운드가 만들어가는 무대로 생각해주시고 듀엣 진행 시에는 서로간에 매너있게 잘 진행 부탁드리겠습니다.</p>
+    </div>
+
+    <div class="rules-box" id="rules-experienced" hidden>
+      <p>곡은 솔로 1곡, 듀엣 1곡으로 진행되며 상황에 따라 변경될 수 있는 점 참고 부탁드리겠습니다.</p>
+      <p>버스킹 선곡 및 최종 점검은 8월, 9월 정기모임에서 진행될 예정입니다. 참여가 어려우신 경우에는 사전에 저에게 연락 부탁드립니다.</p>
+      <p>원활한 준비를 위해 정기모임 참석이 어려운 경우, 선곡 및 버스킹 참여에 일부 제한이 있을 수 있는 점 참고 부탁드립니다.</p>
+      <p>이번 가을 버스킹은 이전 버스킹과 다르게 대중성을 높게 보지 않고 (안 본다는 건 아닙니다..!) 본인의 이야기를 잘 풀어낼 수 있고, 같이 하는 무대를 어떻게 해야 더 잘 만들어갈 수 있는지를 생각하면서 선곡을 해오시면 됩니다.</p>
+      <div class="section-title">선곡 기준</div>
+      <ol>
+        <li>욕설 X</li>
+        <li>대중성을 높게 보지 않지만 너무 낮은 곡은 어려울 수 있습니다.</li>
+        <li>다만, 본인의 서사가 있고 자신의 얘기를 잘 풀어낼 수 있는 곡이라면 점검 때 들어보고 진행하도록 하겠습니다.</li>
+        <li>무리하게 부르고 도전하기보다는 안정성 있게 부를 수 있는 곡</li>
+        <li>장르적인 부분이 강한 곡, 호불호가 너무 강한 장르 (EX. J-POP, 락 등) X</li>
+      </ol>
+    </div>
+
+    <button class="confirm-btn" id="btn-confirm-rules" type="button">내용 확인 하였습니다</button>
+  </div>
+
+  <!-- STEP 5: 선곡 -->
+  <div id="step-songs" hidden>
+    <header>
+      <div class="eyebrow">🎤 N.ROUND 버스킹 선곡 신청</div>
+      <h1>우리 무대에 오를<br><span>곡</span>을 골라주세요</h1>
+      <p class="sub">곡 제목을 적으면, 유튜브 조회수를 기반으로 대중성을 상 · 중 · 하로 자동 판단해드려요</p>
+    </header>
+
+    <div class="list-label">
+      <b>선곡 리스트</b>
+      <span id="row-count-label">최소 2곡</span>
+    </div>
+
+    <div id="song-list"></div>
+
+    <button class="add-btn" id="add-row-btn" type="button">+ 곡 추가하기</button>
+
+    <div class="summary" id="summary-card">
+      <div class="summary-title">대중성 분석 결과</div>
+      <div class="summary-counts">
+        <div class="count-chip 상"><b id="count-상">0</b><span>상</span></div>
+        <div class="count-chip 중"><b id="count-중">0</b><span>중</span></div>
+        <div class="count-chip 하"><b id="count-하">0</b><span>하</span></div>
+      </div>
+      <button class="submit-btn" id="submit-btn" disabled type="button">곡 2개 이상 입력하면 제출할 수 있어요</button>
+      <p class="error-msg" id="error-msg" hidden></p>
+      <p class="hint">제출하면 바로 운영진에게 전달돼요. 따로 카톡 보내지 않아도 돼요 🙌</p>
+    </div>
+  </div>
+
+  <!-- STEP 6: 제출 완료 -->
+  <div id="step-done" hidden>
+    <div class="done-card">
+      <div class="emoji">🎉</div>
+      <h2>제출 완료!</h2>
+      <p>선곡 신청이 저장됐어요. 무대에서 만나요!</p>
+    </div>
+  </div>
+
 </div>
 
+<!-- ================= 관리자 화면 ================= -->
 <div class="admin-wrap" id="admin-view" hidden>
   <div class="admin-header">
     <h1>🎤 선곡 신청 관리</h1>
@@ -271,7 +393,9 @@
 
   <div id="admin-content" hidden>
     <div class="admin-summary">
-      <div class="admin-chip"><b id="admin-count-total">0</b><span style="font-size:11px;color:var(--ink-soft);">신청자</span></div>
+      <div class="admin-chip"><b id="admin-count-total">0</b><span style="font-size:11px;color:var(--ink-soft);">전체 응답</span></div>
+      <div class="admin-chip"><b id="admin-count-participate" style="color:var(--mint-dark);">0</b><span style="font-size:11px;color:var(--ink-soft);">참여</span></div>
+      <div class="admin-chip"><b id="admin-count-decline" style="color:#8A8078;">0</b><span style="font-size:11px;color:var(--ink-soft);">불참</span></div>
       <div class="admin-chip"><b id="admin-count-상" style="color:var(--coral-dark);">0</b><span style="font-size:11px;color:var(--ink-soft);">상 곡수</span></div>
       <div class="admin-chip"><b id="admin-count-중" style="color:var(--mint-dark);">0</b><span style="font-size:11px;color:var(--ink-soft);">중 곡수</span></div>
       <div class="admin-chip"><b id="admin-count-하" style="color:#8A8078;">0</b><span style="font-size:11px;color:var(--ink-soft);">하 곡수</span></div>
@@ -296,14 +420,84 @@ try {
   console.error('Supabase 초기화 실패', e);
 }
 
+/* ---------------- 상태 ---------------- */
+const state = { name: '', experience: null };
+
+/* ---------------- 스텝 전환 ---------------- */
+const steps = ['step-gate', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
+function goToStep(id){
+  steps.forEach(function(s){ document.getElementById(s).hidden = (s !== id); });
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- STEP 1: 참여 게이트 ---------------- */
+const gateNameInput = document.getElementById('gate-name-input');
+const gateError = document.getElementById('gate-error');
+const btnParticipate = document.getElementById('btn-participate');
+const btnDecline = document.getElementById('btn-decline');
+
+function showGateError(msg){ gateError.textContent = msg; gateError.hidden = false; }
+
+btnParticipate.addEventListener('click', function(){
+  const name = gateNameInput.value.trim();
+  if(!name){ showGateError('이름을 입력해주세요'); return; }
+  gateError.hidden = true;
+  state.name = name;
+  goToStep('step-experience');
+});
+
+btnDecline.addEventListener('click', async function(){
+  const name = gateNameInput.value.trim();
+  if(!name){ showGateError('이름을 입력해주세요'); return; }
+  gateError.hidden = true;
+  state.name = name;
+
+  btnDecline.disabled = true;
+  btnParticipate.disabled = true;
+
+  try{
+    if(supabaseClient){
+      const result = await supabaseClient.from('busking_submissions').insert({
+        name: state.name,
+        status: 'declined',
+        experience: null,
+        songs: []
+      });
+      if(result.error) throw result.error;
+    }
+    goToStep('step-declined');
+  }catch(err){
+    showGateError('제출에 실패했어요. 잠시 후 다시 시도해주세요.');
+    btnDecline.disabled = false;
+    btnParticipate.disabled = false;
+  }
+});
+
+/* ---------------- STEP 3: 경험 여부 ---------------- */
+document.getElementById('btn-first').addEventListener('click', function(){
+  state.experience = 'first';
+  document.getElementById('rules-first').hidden = false;
+  document.getElementById('rules-experienced').hidden = true;
+  goToStep('step-rules');
+});
+document.getElementById('btn-experienced').addEventListener('click', function(){
+  state.experience = 'experienced';
+  document.getElementById('rules-first').hidden = true;
+  document.getElementById('rules-experienced').hidden = false;
+  goToStep('step-rules');
+});
+
+/* ---------------- STEP 4: 규정 확인 ---------------- */
+document.getElementById('btn-confirm-rules').addEventListener('click', function(){
+  goToStep('step-songs');
+});
+
+/* ---------------- STEP 5: 선곡 로직 ---------------- */
 const songListEl = document.getElementById('song-list');
 const addRowBtn = document.getElementById('add-row-btn');
-const nameInput = document.getElementById('participant-name');
 const submitBtn = document.getElementById('submit-btn');
 const rowCountLabel = document.getElementById('row-count-label');
 const errorMsgEl = document.getElementById('error-msg');
-const summaryCard = document.getElementById('summary-card');
-const doneCard = document.getElementById('done-card');
 
 let rows = [];
 let rowSeq = 0;
@@ -317,13 +511,13 @@ function createRow(){
 
 function removeRow(id){
   if(rows.length <= MIN_SONGS) return;
-  rows = rows.filter(r => r.id !== id);
+  rows = rows.filter(function(r){ return r.id !== id; });
   renderRows();
 }
 
 function renderRows(){
   songListEl.innerHTML = '';
-  rows.forEach((row, idx) => {
+  rows.forEach(function(row, idx){
     const el = document.createElement('div');
     el.className = 'song-row';
     el.innerHTML =
@@ -438,13 +632,13 @@ function updateSummary(){
   document.getElementById('count-하').textContent = counts['하'];
 
   const filledRows = rows.filter(function(r){ return r.title.trim(); });
-  const ready = nameInput.value.trim() && filledRows.length >= MIN_SONGS;
+  const ready = filledRows.length >= MIN_SONGS;
 
   if(!submitting){
     submitBtn.disabled = !ready;
     submitBtn.textContent = ready
       ? '제출하기 🎤'
-      : '이름 · 곡 ' + MIN_SONGS + '개 이상 입력하면 제출할 수 있어요';
+      : '곡 ' + MIN_SONGS + '개 이상 입력하면 제출할 수 있어요';
   }
 }
 
@@ -455,7 +649,6 @@ function escapeHtml(str){
 }
 
 addRowBtn.addEventListener('click', createRow);
-nameInput.addEventListener('input', updateSummary);
 
 submitBtn.addEventListener('click', async function(){
   if(submitBtn.disabled || submitting) return;
@@ -470,7 +663,9 @@ submitBtn.addEventListener('click', async function(){
   submitBtn.textContent = '제출 중…';
 
   const payload = {
-    name: nameInput.value.trim(),
+    name: state.name,
+    status: 'submitted',
+    experience: state.experience,
     songs: rows
       .filter(function(r){ return r.title.trim(); })
       .map(function(r){
@@ -486,12 +681,7 @@ submitBtn.addEventListener('click', async function(){
   try{
     const result = await supabaseClient.from('busking_submissions').insert(payload);
     if(result.error) throw result.error;
-    summaryCard.hidden = true;
-    document.getElementById('song-list').hidden = true;
-    addRowBtn.hidden = true;
-    document.querySelector('.name-field').hidden = true;
-    document.querySelector('.list-label').hidden = true;
-    doneCard.hidden = false;
+    goToStep('step-done');
   }catch(err){
     submitting = false;
     submitBtn.disabled = false;
@@ -507,6 +697,7 @@ function showError(msg){
 
 for(let i = 0; i < MIN_SONGS; i++) createRow();
 
+/* ---------------- 관리자 화면 로직 ---------------- */
 const mainView = document.getElementById('main-view');
 const adminView = document.getElementById('admin-view');
 const pinCard = document.getElementById('pin-card');
@@ -572,10 +763,16 @@ async function loadSubmissions(){
 
 function renderSubmissions(list){
   const counts = { '상':0, '중':0, '하':0 };
+  let participateCount = 0;
+  let declineCount = 0;
   list.forEach(function(sub){
+    if(sub.status === 'declined'){ declineCount++; }
+    else { participateCount++; }
     (sub.songs || []).forEach(function(s){ if(s.level) counts[s.level]++; });
   });
   document.getElementById('admin-count-total').textContent = list.length;
+  document.getElementById('admin-count-participate').textContent = participateCount;
+  document.getElementById('admin-count-decline').textContent = declineCount;
   document.getElementById('admin-count-상').textContent = counts['상'];
   document.getElementById('admin-count-중').textContent = counts['중'];
   document.getElementById('admin-count-하').textContent = counts['하'];
@@ -587,12 +784,19 @@ function renderSubmissions(list){
 
   submissionsListEl.innerHTML = list.map(function(sub){
     const time = sub.created_at ? new Date(sub.created_at).toLocaleString('ko-KR') : '';
+    const isDeclined = sub.status === 'declined';
+    const statusTag = isDeclined
+      ? '<span class="status-tag declined">불참</span>'
+      : '<span class="status-tag submitted">참여</span>';
+    const expTag = (!isDeclined && sub.experience)
+      ? '<span class="exp-tag">' + (sub.experience === 'first' ? '처음' : '경험자') + '</span>'
+      : '';
     const songsHtml = (sub.songs || []).map(function(s){
       const badge = s.level ? '<div class="sub-badge ' + s.level + '">' + s.level + '</div>' : '<div class="sub-badge 하">-</div>';
       const artistHtml = s.artist ? ' <span class="artist">- ' + escapeHtml(s.artist) + '</span>' : '';
       return '<div class="sub-song"><div class="sub-song-name">' + escapeHtml(s.title) + artistHtml + '</div>' + badge + '</div>';
     }).join('');
-    return '<div class="sub-card"><div class="sub-card-top"><b>' + escapeHtml(sub.name) + '</b><span>' + time + '</span></div>' + songsHtml + '</div>';
+    return '<div class="sub-card"><div class="sub-card-top"><b>' + statusTag + expTag + ' ' + escapeHtml(sub.name) + '</b><span>' + time + '</span></div>' + songsHtml + '</div>';
   }).join('');
 }
 </script>
