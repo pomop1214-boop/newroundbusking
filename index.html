@@ -322,6 +322,26 @@
     <div class="admin-link-row"><a href="#" id="lookup-back-link">← 처음으로</a></div>
   </div>
 
+  <!-- STEP 1-2: 참여 여부 변경 (수정 흐름) -->
+  <div id="step-edit-choice" hidden>
+    <header>
+      <div class="eyebrow">🎤 N.ROUND 버스킹</div>
+      <h1><span id="edit-choice-name"></span>님,<br>참여 여부를<br>다시 선택해주세요</h1>
+      <p class="sub">이전 선택을 바꾸고 싶으면 여기서 변경할 수 있어요</p>
+    </header>
+
+    <button class="choice-btn" id="btn-edit-participate" type="button">
+      <span class="emoji">🙋</span>
+      <span><b>참여할게요</b><p>이번 무대에 함께 설게요</p></span>
+    </button>
+    <button class="choice-btn" id="btn-edit-decline" type="button">
+      <span class="emoji">😢</span>
+      <span><b>이번엔 어려울 것 같아요</b><p>다음 기회에 참여할게요</p></span>
+    </button>
+
+    <p class="error-msg" id="edit-choice-error" hidden></p>
+  </div>
+
   <!-- STEP 2: 불참 확인 -->
   <div id="step-declined" hidden>
     <div class="done-card">
@@ -493,7 +513,7 @@ try {
 const state = { name: '', experience: null, editingId: null };
 
 /* ---------------- 스텝 전환 ---------------- */
-const steps = ['step-loading', 'step-closed', 'step-gate', 'step-lookup', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
+const steps = ['step-loading', 'step-closed', 'step-gate', 'step-lookup', 'step-edit-choice', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
 function goToStep(id){
   steps.forEach(function(s){ document.getElementById(s).hidden = (s !== id); });
   window.scrollTo(0, 0);
@@ -610,13 +630,49 @@ btnLookup.addEventListener('click', async function(){
 
     renderRows();
     lookupError.hidden = true;
-    goToStep('step-songs');
+    document.getElementById('edit-choice-name').textContent = state.name;
+    goToStep('step-edit-choice');
   }catch(err){
     lookupError.textContent = '조회에 실패했어요. 잠시 후 다시 시도해주세요.';
     lookupError.hidden = false;
   }finally{
     btnLookup.disabled = false;
     btnLookup.textContent = '찾기';
+  }
+});
+
+/* ---------------- STEP 1-2: 참여 여부 변경 ---------------- */
+const editChoiceError = document.getElementById('edit-choice-error');
+
+document.getElementById('btn-edit-participate').addEventListener('click', function(){
+  editChoiceError.hidden = true;
+  if(state.experience){
+    // 이미 경험 정보가 있으면(원래 참여자였음) 바로 선곡 화면으로
+    goToStep('step-songs');
+  } else {
+    // 원래 불참이었으면 경험 여부부터 새로 물어봐요
+    goToStep('step-experience');
+  }
+});
+
+document.getElementById('btn-edit-decline').addEventListener('click', async function(){
+  editChoiceError.hidden = true;
+  if(!supabaseClient){
+    editChoiceError.textContent = '저장소 연결에 문제가 있어요.';
+    editChoiceError.hidden = false;
+    return;
+  }
+  try{
+    const result = await supabaseClient.from('busking_submissions').update({
+      status: 'declined',
+      experience: null,
+      songs: []
+    }).eq('id', state.editingId);
+    if(result.error) throw result.error;
+    goToStep('step-declined');
+  }catch(err){
+    editChoiceError.textContent = '변경에 실패했어요. 잠시 후 다시 시도해주세요.';
+    editChoiceError.hidden = false;
   }
 });
 
