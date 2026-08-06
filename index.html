@@ -107,6 +107,14 @@
   }
   .remove-btn:hover{ color:var(--coral-dark); }
 
+  .type-toggle{ display:flex; gap:6px; margin-top:2px; }
+  .type-btn{
+    font-size:11.5px; font-weight:700; padding:5px 14px; border-radius:999px;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); cursor:pointer;
+  }
+  .type-btn.active.solo{ background:var(--coral-dark); border-color:var(--coral-dark); color:#fff; }
+  .type-btn.active.duet{ background:var(--mint-dark); border-color:var(--mint-dark); color:#fff; }
+
   .stub{
     width:104px; flex-shrink:0; position:relative; border-left:2px dashed #E7D9CB;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -227,6 +235,9 @@
   .sub-song:first-of-type{ border-top:none; }
   .sub-song-name{ flex:1; min-width:0; }
   .sub-song-name .artist{ color:var(--ink-soft); font-size:11.5px; }
+  .type-tag{ font-size:10px; font-weight:700; padding:1px 8px; border-radius:999px; margin-right:6px; }
+  .type-tag.solo{ background:#FFEAE4; color:var(--coral-dark); }
+  .type-tag.duet{ background:#E3F7F4; color:var(--mint-dark); }
   .sub-badge{ font-family:'Gaegu', sans-serif; font-weight:700; font-size:13px; padding:2px 10px; border-radius:999px; flex-shrink:0; margin-left:8px; }
   .sub-badge.상{ background:#FFEAE4; color:var(--coral-dark); }
   .sub-badge.중{ background:#E3F7F4; color:var(--mint-dark); }
@@ -587,13 +598,14 @@ btnLookup.addEventListener('click', async function(){
         id,
         title: s.title || '',
         artist: s.artist || '',
+        type: s.type === 'duet' ? 'duet' : 'solo',
         level: s.level || null,
         reason: s.reason || '',
         status: s.level ? 'done' : 'idle'
       };
     });
     while(rows.length < MIN_SONGS){
-      rows.push({ id: 'row-' + (++rowSeq), title:'', artist:'', level:null, reason:'', status:'idle' });
+      rows.push({ id: 'row-' + (++rowSeq), title:'', artist:'', type:'solo', level:null, reason:'', status:'idle' });
     }
 
     renderRows();
@@ -649,7 +661,7 @@ let submitting = false;
 
 function createRow(){
   const id = 'row-' + (++rowSeq);
-  rows.push({ id, title:'', artist:'', level:null, reason:'', status:'idle' });
+  rows.push({ id, title:'', artist:'', type:'solo', level:null, reason:'', status:'idle' });
   renderRows();
 }
 
@@ -669,6 +681,10 @@ function renderRows(){
         '<div class="row-index">' + (idx + 1) + '번째 곡</div>' +
         '<input class="title" type="text" placeholder="곡 제목" value="' + escapeHtml(row.title) + '" data-id="' + row.id + '" data-field="title" />' +
         '<input class="artist" type="text" placeholder="가수명 (선택)" value="' + escapeHtml(row.artist) + '" data-id="' + row.id + '" data-field="artist" />' +
+        '<div class="type-toggle" data-typegroup="' + row.id + '">' +
+          '<button type="button" class="type-btn solo' + (row.type === 'solo' ? ' active' : '') + '" data-id="' + row.id + '" data-type="solo">솔로</button>' +
+          '<button type="button" class="type-btn duet' + (row.type === 'duet' ? ' active' : '') + '" data-id="' + row.id + '" data-type="duet">듀엣</button>' +
+        '</div>' +
         (rows.length > MIN_SONGS ? '<button class="remove-btn" data-remove="' + row.id + '" type="button">이 곡 삭제</button>' : '') +
       '</div>' +
       '<div class="stub ' + stubClass(row) + '" data-stub="' + row.id + '">' +
@@ -690,6 +706,14 @@ function renderRows(){
   });
   songListEl.querySelectorAll('[data-retry]').forEach(function(btn){
     btn.addEventListener('click', function(){ analyzeRow(btn.dataset.retry); });
+  });
+  songListEl.querySelectorAll('[data-type]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const row = rows.find(function(r){ return r.id === btn.dataset.id; });
+      if(!row) return;
+      row.type = btn.dataset.type;
+      renderRows();
+    });
   });
 
   updateSummary();
@@ -817,6 +841,7 @@ submitBtn.addEventListener('click', async function(){
         return {
           title: r.title.trim(),
           artist: r.artist.trim(),
+          type: r.type === 'duet' ? 'duet' : 'solo',
           level: r.level,
           reason: r.reason
         };
@@ -968,7 +993,8 @@ function renderSubmissions(list){
     const songsHtml = (sub.songs || []).map(function(s){
       const badge = s.level ? '<div class="sub-badge ' + s.level + '">' + s.level + '</div>' : '<div class="sub-badge 하">-</div>';
       const artistHtml = s.artist ? ' <span class="artist">- ' + escapeHtml(s.artist) + '</span>' : '';
-      return '<div class="sub-song"><div class="sub-song-name">' + escapeHtml(s.title) + artistHtml + '</div>' + badge + '</div>';
+      const typeTag = '<span class="type-tag ' + (s.type === 'duet' ? 'duet' : 'solo') + '">' + (s.type === 'duet' ? '듀엣' : '솔로') + '</span>';
+      return '<div class="sub-song"><div class="sub-song-name">' + typeTag + escapeHtml(s.title) + artistHtml + '</div>' + badge + '</div>';
     }).join('');
     return '<div class="sub-card"><div class="sub-card-top"><b>' + statusTag + expTag + ' ' + escapeHtml(sub.name) + '</b><span class="meta-right"><span class="time">' + time + '</span><button class="delete-btn" data-delete="' + sub.id + '" type="button">삭제</button></span></div>' + songsHtml + '</div>';
   }).join('');
