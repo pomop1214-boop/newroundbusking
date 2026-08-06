@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { title, artist } = req.body || {};
+  const { title } = req.body || {};
 
   if (!title || !String(title).trim()) {
     res.status(400).json({ error: '곡 제목이 필요해요' });
@@ -17,11 +17,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const query = `${title} ${artist || ''}`.trim();
+  const query = String(title).trim();
 
   try {
+    // 곡 제목만으로 검색하고, 조회수 순으로 정렬해서 가장 높은 조회수의 영상을 우선 후보로 가져와요.
     const searchUrl =
-      'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=3&q=' +
+      'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&maxResults=5&q=' +
       encodeURIComponent(query) +
       '&key=' + apiKey;
 
@@ -59,6 +60,7 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    // 후보들 중 실제로 조회수가 가장 높은 영상을 기준으로 삼아요.
     let bestViews = 0;
     items.forEach((item) => {
       const v = parseInt((item.statistics && item.statistics.viewCount) || '0', 10);
@@ -66,7 +68,7 @@ module.exports = async function handler(req, res) {
     });
 
     let level;
-    if (bestViews >= 30000000) level = '상';
+    if (bestViews >= 20000000) level = '상';
     else if (bestViews < 3000000) level = '하';
     else level = '중';
 
