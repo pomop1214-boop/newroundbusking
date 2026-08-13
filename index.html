@@ -238,6 +238,12 @@
   .type-tag{ font-size:10px; font-weight:700; padding:1px 8px; border-radius:999px; margin-right:6px; }
   .type-tag.solo{ background:#FFEAE4; color:var(--coral-dark); }
   .type-tag.duet{ background:#E3F7F4; color:var(--mint-dark); }
+  .song-delete-btn{
+    width:22px; height:22px; flex-shrink:0; margin-left:8px; border-radius:50%;
+    border:1px solid var(--line); background:#fff; color:var(--muted); font-size:13px;
+    line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .song-delete-btn:hover{ background:var(--coral-light, #FFEAE4); border-color:var(--coral-dark); color:var(--coral-dark); }
   .sub-badge{ font-family:'Gaegu', sans-serif; font-weight:700; font-size:13px; padding:2px 10px; border-radius:999px; flex-shrink:0; margin-left:8px; }
   .sub-badge.상{ background:#FFEAE4; color:var(--coral-dark); }
   .sub-badge.중{ background:#E3F7F4; color:var(--mint-dark); }
@@ -377,7 +383,7 @@
     </header>
 
     <div class="rules-box" id="rules-first" hidden>
-      <p>솔로 1곡 듀엣 1곡으로 진행할 예정입니다 (상황 혹은 인원 참여에 따라 조정될 수 있는 점 참고 부탁드리겠습니다).</p>
+      <p>솔로 1곡 듀엣 1곡으로 진행할 예정입니다 (상황에 따라 조정될 수 있는 점 참고 부탁드리겠습니다).</p>
       <p>버스킹 점검은 공식적인 점검은 정기모임에 진행을 합니다.</p>
       <p>시간이 안 맞거나 개인적인 사정에 의해서 점검을 못 받을 경우 모임장이 직접 관리 진행하고 있습니다. (형평성을 위해 핸디캡이 있을 수 있다는 점 참고바랍니다.)</p>
       <p>버스킹을 처음 하는 부분에 있어서 선곡이 만약 어렵다고 생각하신다면 하고 싶은 곡 그리고 잘하는 곡을 여러 개 후보로 정해 오시면 운영진 혹은 멤버들과 같이 선곡 진행해드리고 있습니다.</p>
@@ -394,7 +400,7 @@
     </div>
 
     <div class="rules-box" id="rules-experienced" hidden>
-      <p>곡은 솔로 1곡, 듀엣 1곡으로 진행되며 (상황 혹은 인원 참여에 따라 조정될 수 있는 점 참고 부탁드리겠습니다.)</p>
+      <p>곡은 솔로 1곡, 듀엣 1곡으로 진행되며 상황에 따라 변경될 수 있는 점 참고 부탁드리겠습니다.</p>
       <p>버스킹 선곡 및 최종 점검은 8월, 9월 정기모임에서 진행될 예정입니다. 참여가 어려우신 경우에는 사전에 저에게 연락 부탁드립니다.</p>
       <p>원활한 준비를 위해 정기모임 참석이 어려운 경우, 선곡 및 버스킹 참여에 일부 제한이 있을 수 있는 점 참고 부탁드립니다.</p>
       <p>이번 가을 버스킹은 이전 버스킹과 다르게 대중성을 높게 보지 않고 (안 본다는 건 아닙니다..!) 본인의 이야기를 잘 풀어낼 수 있고, 같이 하는 무대를 어떻게 해야 더 잘 만들어갈 수 있는지를 생각하면서 선곡을 해오시면 됩니다.</p>
@@ -999,6 +1005,36 @@ submissionsListEl.addEventListener('click', async function(e){
   }
 });
 
+submissionsListEl.addEventListener('click', async function(e){
+  const btn = e.target.closest('[data-sub][data-idx]');
+  if(!btn) return;
+  const subId = btn.dataset.sub;
+  const idx = parseInt(btn.dataset.idx, 10);
+
+  const sub = lastSubmissions.find(function(s){ return s.id === subId; });
+  if(!sub) return;
+  const song = (sub.songs || [])[idx];
+  const label = song ? song.title : '이 곡';
+
+  const ok = window.confirm('\u201c' + label + '\u201d 곡을 목록에서 삭제할까요?');
+  if(!ok) return;
+
+  btn.disabled = true;
+
+  const newSongs = (sub.songs || []).filter(function(_, i){ return i !== idx; });
+
+  try{
+    const result = await supabaseClient.from('busking_submissions').update({ songs: newSongs }).eq('id', subId);
+    if(result.error) throw result.error;
+    loadSubmissions();
+  }catch(err){
+    btn.disabled = false;
+    alert('삭제에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }
+});
+
+let lastSubmissions = [];
+
 async function loadSubmissions(){
   if(!supabaseClient) return;
   submissionsListEl.innerHTML = '<div class="empty-note">불러오는 중…</div>';
@@ -1013,7 +1049,8 @@ async function loadSubmissions(){
     return;
   }
 
-  renderSubmissions(result.data || []);
+  lastSubmissions = result.data || [];
+  renderSubmissions(lastSubmissions);
 }
 
 function renderSubmissions(list){
@@ -1046,11 +1083,12 @@ function renderSubmissions(list){
     const expTag = (!isDeclined && sub.experience)
       ? '<span class="exp-tag">' + (sub.experience === 'first' ? '처음' : '경험자') + '</span>'
       : '';
-    const songsHtml = (sub.songs || []).map(function(s){
+    const songsHtml = (sub.songs || []).map(function(s, idx){
       const badge = s.level ? '<div class="sub-badge ' + s.level + '">' + s.level + '</div>' : '<div class="sub-badge 하">-</div>';
       const artistHtml = s.artist ? ' <span class="artist">- ' + escapeHtml(s.artist) + '</span>' : '';
       const typeTag = '<span class="type-tag ' + (s.type === 'duet' ? 'duet' : 'solo') + '">' + (s.type === 'duet' ? '듀엣' : '솔로') + '</span>';
-      return '<div class="sub-song"><div class="sub-song-name">' + typeTag + escapeHtml(s.title) + artistHtml + '</div>' + badge + '</div>';
+      const delBtn = '<button class="song-delete-btn" data-sub="' + sub.id + '" data-idx="' + idx + '" type="button" title="이 곡 삭제">×</button>';
+      return '<div class="sub-song"><div class="sub-song-name">' + typeTag + escapeHtml(s.title) + artistHtml + '</div>' + badge + delBtn + '</div>';
     }).join('');
     return '<div class="sub-card"><div class="sub-card-top"><b>' + statusTag + expTag + ' ' + escapeHtml(sub.name) + '</b><span class="meta-right"><span class="time">' + time + '</span><button class="delete-btn" data-delete="' + sub.id + '" type="button">삭제</button></span></div>' + songsHtml + '</div>';
   }).join('');
