@@ -116,6 +116,28 @@
   .type-btn.active.solo{ background:var(--coral-dark); border-color:var(--coral-dark); color:#fff; }
   .type-btn.active.duet{ background:var(--mint-dark); border-color:var(--mint-dark); color:#fff; }
 
+  .inst-row{ margin-top:4px; }
+  .inst-upload-btn{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    color:var(--mint-dark); background:var(--mint-light, #E7FAF6); border:1px solid #C9EDE7;
+    padding:7px 14px; border-radius:999px; cursor:pointer;
+  }
+  .inst-upload-btn:hover{ background:#DCF5F0; }
+  .inst-status{ font-size:11.5px; color:var(--ink-soft); }
+  .inst-status.error{ color:var(--coral-dark); }
+  .inst-uploaded{
+    display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700;
+    color:var(--mint-dark); background:var(--mint-light, #E7FAF6); border:1px solid #C9EDE7;
+    padding:6px 8px 6px 14px; border-radius:999px; max-width:100%;
+  }
+  .inst-uploaded a{ color:inherit; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+  .inst-remove-btn{
+    width:18px; height:18px; flex-shrink:0; border-radius:50%; border:none; background:#fff;
+    color:var(--mint-dark); font-size:12px; line-height:1; cursor:pointer; display:inline-flex;
+    align-items:center; justify-content:center;
+  }
+  .inst-retry-btn{ font-size:11px; color:var(--coral-dark); background:none; border:none; text-decoration:underline; cursor:pointer; padding:0; margin-left:6px; }
+
   .stub{
     width:104px; flex-shrink:0; position:relative; border-left:2px dashed #E7D9CB;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -351,6 +373,20 @@
     <div class="admin-link-row"><a href="#" id="lookup-back-link">← 처음으로</a></div>
   </div>
 
+  <!-- STEP 1-1-2: 확정된 곡 MR 업로드 -->
+  <div id="step-inst" hidden>
+    <header>
+      <div class="eyebrow">🎉 축하해요!</div>
+      <h1>확정된 곡의<br>MR(인스트)을<br>올려주세요</h1>
+      <p class="sub">점검 후 최종 확정된 곡이에요. 준비된 MR 파일을 올려주세요</p>
+    </header>
+
+    <div id="inst-upload-list"></div>
+
+    <button class="confirm-btn" id="btn-inst-continue" type="button">다음</button>
+    <div class="admin-link-row"><a href="#" id="inst-skip-link">나중에 할게요, 건너뛰기</a></div>
+  </div>
+
   <!-- STEP 1-2: 참여 여부 변경 (수정 흐름) -->
   <div id="step-edit-choice" hidden>
     <header>
@@ -546,10 +582,10 @@ try {
 }
 
 /* ---------------- 상태 ---------------- */
-const state = { name: '', experience: null, editingId: null };
+const state = { name: '', experience: null, editingId: null, confirmedSongs: [], recordSongs: [] };
 
 /* ---------------- 스텝 전환 ---------------- */
-const steps = ['step-loading', 'step-closed', 'step-gate', 'step-lookup', 'step-edit-choice', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
+const steps = ['step-loading', 'step-closed', 'step-gate', 'step-lookup', 'step-inst', 'step-edit-choice', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
 function goToStep(id){
   steps.forEach(function(s){ document.getElementById(s).hidden = (s !== id); });
   window.scrollTo(0, 0);
@@ -647,6 +683,10 @@ btnLookup.addEventListener('click', async function(){
     state.name = record.name;
     state.editingId = record.id;
     state.experience = record.experience;
+    state.recordSongs = (record.songs || []).map(function(s){ return Object.assign({}, s); });
+    state.confirmedSongs = state.recordSongs
+      .map(function(s, i){ return Object.assign({}, s, { _idx: i, id: 'confirmed-' + i, instStatus: s.instUrl ? 'done' : 'idle' }); })
+      .filter(function(s){ return s.confirmed; });
 
     rows = (record.songs || []).map(function(s){
       const id = 'row-' + (++rowSeq);
@@ -659,17 +699,26 @@ btnLookup.addEventListener('click', async function(){
         level: s.level || null,
         reason: s.reason || '',
         confirmed: !!s.confirmed,
-        status: s.level ? 'done' : 'idle'
+        status: s.level ? 'done' : 'idle',
+        instUrl: s.instUrl || null,
+        instName: s.instName || '',
+        instStatus: s.instUrl ? 'done' : 'idle'
       };
     });
     while(rows.length < MIN_SONGS){
-      rows.push({ id: 'row-' + (++rowSeq), title:'', artist:'', type:'solo', partner:'', level:null, reason:'', confirmed:false, status:'idle' });
+      rows.push({ id: 'row-' + (++rowSeq), title:'', artist:'', type:'solo', partner:'', level:null, reason:'', confirmed:false, status:'idle', instUrl:null, instName:'', instStatus:'idle' });
     }
 
     renderRows();
     lookupError.hidden = true;
     document.getElementById('edit-choice-name').textContent = state.name;
-    goToStep('step-edit-choice');
+
+    if(state.confirmedSongs.length > 0){
+      renderInstUploadList();
+      goToStep('step-inst');
+    } else {
+      goToStep('step-edit-choice');
+    }
   }catch(err){
     lookupError.textContent = '조회에 실패했어요. 잠시 후 다시 시도해주세요.';
     lookupError.hidden = false;
@@ -677,6 +726,29 @@ btnLookup.addEventListener('click', async function(){
     btnLookup.disabled = false;
     btnLookup.textContent = '찾기';
   }
+});
+
+/* ---------------- STEP 1-1-2: 확정된 곡 MR 업로드 ---------------- */
+function syncRowsInstFromRecord(){
+  rows.forEach(function(r, i){
+    const src = state.recordSongs[i];
+    if(src){
+      r.instUrl = src.instUrl || null;
+      r.instName = src.instName || '';
+    }
+  });
+}
+
+document.getElementById('btn-inst-continue').addEventListener('click', function(){
+  syncRowsInstFromRecord();
+  document.getElementById('edit-choice-name').textContent = state.name;
+  goToStep('step-edit-choice');
+});
+document.getElementById('inst-skip-link').addEventListener('click', function(e){
+  e.preventDefault();
+  syncRowsInstFromRecord();
+  document.getElementById('edit-choice-name').textContent = state.name;
+  goToStep('step-edit-choice');
 });
 
 /* ---------------- STEP 1-2: 참여 여부 변경 ---------------- */
@@ -755,7 +827,7 @@ let submitting = false;
 
 function createRow(){
   const id = 'row-' + (++rowSeq);
-  rows.push({ id, title:'', artist:'', type:'solo', partner:'', level:null, reason:'', confirmed:false, status:'idle' });
+  rows.push({ id, title:'', artist:'', type:'solo', partner:'', level:null, reason:'', confirmed:false, status:'idle', instUrl:null, instName:'', instStatus:'idle' });
   renderRows();
 }
 
@@ -812,6 +884,113 @@ function renderRows(){
   });
 
   updateSummary();
+}
+
+function renderInstSection(item){
+  if(item.instStatus === 'uploading'){
+    return '<div class="inst-row" data-instrow="' + item.id + '"><span class="inst-status">🎵 MR 업로드 중…</span></div>';
+  }
+  if(item.instStatus === 'done' && item.instUrl){
+    return '<div class="inst-row" data-instrow="' + item.id + '">' +
+      '<div class="inst-uploaded">' +
+        '<a href="' + escapeHtml(item.instUrl) + '" target="_blank" rel="noopener">🎵 ' + escapeHtml(item.instName || 'MR 파일') + '</a>' +
+        '<button class="inst-remove-btn" data-id="' + item.id + '" type="button" title="첨부 취소">×</button>' +
+      '</div>' +
+    '</div>';
+  }
+  if(item.instStatus === 'error'){
+    return '<div class="inst-row" data-instrow="' + item.id + '"><span class="inst-status error">업로드 실패</span><button class="inst-retry-btn" data-id="' + item.id + '" type="button">다시 시도</button></div>';
+  }
+  return '<div class="inst-row" data-instrow="' + item.id + '">' +
+    '<label class="inst-upload-btn">🎵 MR(인스트) 파일 첨부' +
+      '<input type="file" accept="audio/*" class="inst-file-input" data-id="' + item.id + '" hidden />' +
+    '</label>' +
+  '</div>';
+}
+
+function renderInstUploadList(){
+  const listEl = document.getElementById('inst-upload-list');
+  if(!listEl) return;
+
+  listEl.innerHTML = state.confirmedSongs.map(function(s){
+    const typeLabel = s.type === 'duet' ? '듀엣' : '솔로';
+    const typeColor = s.type === 'duet' ? 'var(--mint-dark)' : 'var(--coral-dark)';
+    const partnerText = (s.type === 'duet' && s.partner) ? ' <span style="color:var(--ink-soft); font-weight:500; font-size:13px;">(with ' + escapeHtml(s.partner) + ')</span>' : '';
+    return '<div class="song-row" style="display:block; padding:16px;">' +
+      '<div style="font-size:11.5px; font-weight:700; color:' + typeColor + '; margin-bottom:4px;">' + typeLabel + '</div>' +
+      '<div style="font-size:16px; font-weight:700; margin-bottom:12px;">' + escapeHtml(s.title) + partnerText + '</div>' +
+      renderInstSection(s) +
+    '</div>';
+  }).join('');
+
+  listEl.querySelectorAll('.inst-file-input').forEach(function(input){
+    input.addEventListener('change', onInstFileSelected);
+  });
+  listEl.querySelectorAll('.inst-remove-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ onInstRemove(btn.dataset.id); });
+  });
+  listEl.querySelectorAll('.inst-retry-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const item = state.confirmedSongs.find(function(s){ return s.id === btn.dataset.id; });
+      if(item){ item.instStatus = 'idle'; renderInstUploadList(); }
+    });
+  });
+}
+
+async function persistConfirmedInst(item){
+  const songs = state.recordSongs.map(function(s){ return Object.assign({}, s); });
+  if(!songs[item._idx]) throw new Error('곡을 찾을 수 없어요');
+  songs[item._idx].instUrl = item.instUrl;
+  songs[item._idx].instName = item.instName;
+  const result = await supabaseClient.from('busking_submissions').update({ songs: songs }).eq('id', state.editingId);
+  if(result.error) throw result.error;
+  state.recordSongs = songs;
+}
+
+async function onInstFileSelected(e){
+  const id = e.target.dataset.id;
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const item = state.confirmedSongs.find(function(s){ return s.id === id; });
+  if(!item) return;
+
+  if(file.size > 30 * 1024 * 1024){
+    alert('파일이 너무 커요. 30MB 이하로 올려주세요.');
+    return;
+  }
+
+  item.instStatus = 'uploading';
+  renderInstUploadList();
+
+  try{
+    if(!supabaseClient) throw new Error('저장소 연결 안 됨');
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const path = Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '_' + safeName;
+    const uploadResult = await supabaseClient.storage.from('busking-inst').upload(path, file);
+    if(uploadResult.error) throw uploadResult.error;
+    const publicUrlResult = supabaseClient.storage.from('busking-inst').getPublicUrl(path);
+    item.instUrl = publicUrlResult.data.publicUrl;
+    item.instName = file.name;
+    await persistConfirmedInst(item);
+    item.instStatus = 'done';
+  }catch(err){
+    item.instStatus = 'error';
+  }
+  renderInstUploadList();
+}
+
+async function onInstRemove(id){
+  const item = state.confirmedSongs.find(function(s){ return s.id === id; });
+  if(!item) return;
+  item.instUrl = null;
+  item.instName = '';
+  item.instStatus = 'idle';
+  renderInstUploadList();
+  try{
+    await persistConfirmedInst(item);
+  }catch(err){
+    alert('삭제 반영에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }
 }
 
 function stubClass(row){
@@ -940,7 +1119,9 @@ submitBtn.addEventListener('click', async function(){
           partner: r.type === 'duet' ? (r.partner || '').trim() : '',
           level: r.level,
           reason: r.reason,
-          confirmed: !!r.confirmed
+          confirmed: !!r.confirmed,
+          instUrl: r.instUrl || null,
+          instName: r.instName || ''
         };
       })
   };
@@ -1217,7 +1398,10 @@ function renderSubmissions(list){
       const partnerRow = songType === 'duet'
         ? '<div class="partner-edit-row"><span class="partner-edit-label">파트너</span><input class="partner-edit-input" type="text" placeholder="함께 부를 크루원 이름" value="' + escapeHtml(s.partner || '') + '" data-partner-sub="' + sub.id + '" data-partner-idx="' + idx + '" /></div>'
         : '';
-      return '<div class="sub-song"><div class="sub-song-main"><div class="sub-song-name">' + typeBtn + escapeHtml(s.title) + artistHtml + '</div><div class="song-actions">' + badge + starBtn + delBtn + '</div></div>' + partnerRow + '</div>';
+      const instRow = s.instUrl
+        ? '<div class="partner-edit-row"><a href="' + escapeHtml(s.instUrl) + '" target="_blank" rel="noopener" style="font-size:11.5px; color:var(--mint-dark); font-weight:700; text-decoration:none;">🎵 ' + escapeHtml(s.instName || 'MR 파일') + ' 듣기/다운로드</a></div>'
+        : '';
+      return '<div class="sub-song"><div class="sub-song-main"><div class="sub-song-name">' + typeBtn + escapeHtml(s.title) + artistHtml + '</div><div class="song-actions">' + badge + starBtn + delBtn + '</div></div>' + partnerRow + instRow + '</div>';
     }).join('');
     return '<div class="sub-card"><div class="sub-card-top"><b>' + statusTag + expTag + ' ' + escapeHtml(sub.name) + '</b><span class="meta-right"><span class="time">' + time + '</span><button class="delete-btn" data-delete="' + sub.id + '" type="button">삭제</button></span></div>' + songsHtml + '</div>';
   }).join('');
