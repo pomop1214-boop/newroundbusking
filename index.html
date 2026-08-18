@@ -99,6 +99,7 @@
   .row-main input{ width:100%; border:none; outline:none; background:transparent; font-family:'Pretendard', sans-serif; color:var(--ink); }
   .row-main input.title{ font-size:16px; font-weight:700; }
   .row-main input.artist{ font-size:13.5px; color:var(--ink-soft); font-weight:500; }
+  .row-main input.partner{ font-size:13px; color:var(--mint-dark); font-weight:600; }
   .row-main input::placeholder{ color:#D8CEC5; }
 
   .remove-btn{
@@ -647,6 +648,7 @@ btnLookup.addEventListener('click', async function(){
         title: s.title || '',
         artist: s.artist || '',
         type: s.type === 'duet' ? 'duet' : 'solo',
+        partner: s.partner || '',
         level: s.level || null,
         reason: s.reason || '',
         confirmed: !!s.confirmed,
@@ -654,7 +656,7 @@ btnLookup.addEventListener('click', async function(){
       };
     });
     while(rows.length < MIN_SONGS){
-      rows.push({ id: 'row-' + (++rowSeq), title:'', artist:'', type:'solo', level:null, reason:'', confirmed:false, status:'idle' });
+      rows.push({ id: 'row-' + (++rowSeq), title:'', artist:'', type:'solo', partner:'', level:null, reason:'', confirmed:false, status:'idle' });
     }
 
     renderRows();
@@ -746,7 +748,7 @@ let submitting = false;
 
 function createRow(){
   const id = 'row-' + (++rowSeq);
-  rows.push({ id, title:'', artist:'', type:'solo', level:null, reason:'', confirmed:false, status:'idle' });
+  rows.push({ id, title:'', artist:'', type:'solo', partner:'', level:null, reason:'', confirmed:false, status:'idle' });
   renderRows();
 }
 
@@ -770,6 +772,7 @@ function renderRows(){
           '<button type="button" class="type-btn solo' + (row.type === 'solo' ? ' active' : '') + '" data-id="' + row.id + '" data-type="solo">솔로</button>' +
           '<button type="button" class="type-btn duet' + (row.type === 'duet' ? ' active' : '') + '" data-id="' + row.id + '" data-type="duet">듀엣</button>' +
         '</div>' +
+        (row.type === 'duet' ? '<input class="partner" type="text" placeholder="함께 부를 크루원 이름" value="' + escapeHtml(row.partner || '') + '" data-id="' + row.id + '" data-field="partner" />' : '') +
         (rows.length > MIN_SONGS ? '<button class="remove-btn" data-remove="' + row.id + '" type="button">이 곡 삭제</button>' : '') +
       '</div>' +
       '<div class="stub ' + stubClass(row) + '" data-stub="' + row.id + '">' +
@@ -927,6 +930,7 @@ submitBtn.addEventListener('click', async function(){
           title: r.title.trim(),
           artist: r.artist.trim(),
           type: r.type === 'duet' ? 'duet' : 'solo',
+          partner: r.type === 'duet' ? (r.partner || '').trim() : '',
           level: r.level,
           reason: r.reason,
           confirmed: !!r.confirmed
@@ -1145,10 +1149,11 @@ function renderSubmissions(list){
       const badge = s.level ? '<div class="sub-badge ' + s.level + '">' + s.level + '</div>' : '<div class="sub-badge 하">-</div>';
       const artistHtml = s.artist ? ' <span class="artist">- ' + escapeHtml(s.artist) + '</span>' : '';
       const songType = s.type === 'duet' ? 'duet' : 'solo';
+      const partnerHtml = (songType === 'duet' && s.partner) ? ' <span class="artist">(with ' + escapeHtml(s.partner) + ')</span>' : '';
       const typeTag = '<span class="type-tag ' + songType + '">' + (songType === 'duet' ? '듀엣' : '솔로') + '</span>';
       const starBtn = '<button class="confirm-star-btn' + (s.confirmed ? ' active' : '') + '" data-confirm-sub="' + sub.id + '" data-confirm-idx="' + idx + '" data-confirm-type="' + songType + '" type="button" title="최종 확정">' + (s.confirmed ? '★' : '☆') + '</button>';
       const delBtn = '<button class="song-delete-btn" data-sub="' + sub.id + '" data-idx="' + idx + '" type="button" title="이 곡 삭제">×</button>';
-      return '<div class="sub-song"><div class="sub-song-name">' + typeTag + escapeHtml(s.title) + artistHtml + '</div><div class="song-actions">' + badge + starBtn + delBtn + '</div></div>';
+      return '<div class="sub-song"><div class="sub-song-name">' + typeTag + escapeHtml(s.title) + artistHtml + partnerHtml + '</div><div class="song-actions">' + badge + starBtn + delBtn + '</div></div>';
     }).join('');
     return '<div class="sub-card"><div class="sub-card-top"><b>' + statusTag + expTag + ' ' + escapeHtml(sub.name) + '</b><span class="meta-right"><span class="time">' + time + '</span><button class="delete-btn" data-delete="' + sub.id + '" type="button">삭제</button></span></div>' + songsHtml + '</div>';
   }).join('');
@@ -1167,11 +1172,20 @@ function renderConfirmedList(list){
 
   confirmedListEl.innerHTML = participants.map(function(sub){
     const songs = sub.songs || [];
-    const solo = songs.find(function(s){ return s.confirmed && (s.type === 'duet' ? 'duet' : 'solo') === 'solo'; });
-    const duet = songs.find(function(s){ return s.confirmed && (s.type === 'duet' ? 'duet' : 'solo') === 'duet'; });
-    const soloSlot = '<span class="confirmed-slot solo' + (solo ? ' done' : '') + '">솔로 · ' + (solo ? escapeHtml(solo.title) : '미정') + '</span>';
-    const duetSlot = '<span class="confirmed-slot duet' + (duet ? ' done' : '') + '">듀엣 · ' + (duet ? escapeHtml(duet.title) : '미정') + '</span>';
-    return '<div class="confirmed-row"><b>' + escapeHtml(sub.name) + '</b>' + soloSlot + duetSlot + '</div>';
+    const confirmedSongs = songs.filter(function(s){ return s.confirmed; });
+
+    let slotsHtml;
+    if(confirmedSongs.length === 0){
+      slotsHtml = '<span style="font-size:11.5px; color:var(--muted);">아직 확정된 곡 없음</span>';
+    } else {
+      slotsHtml = confirmedSongs.map(function(s){
+        const type = s.type === 'duet' ? 'duet' : 'solo';
+        const label = (type === 'duet' ? '듀엣' : '솔로') + ' · ' + escapeHtml(s.title) + (type === 'duet' && s.partner ? ' (with ' + escapeHtml(s.partner) + ')' : '');
+        return '<span class="confirmed-slot ' + type + ' done">' + label + '</span>';
+      }).join('');
+    }
+
+    return '<div class="confirmed-row"><b>' + escapeHtml(sub.name) + '</b>' + slotsHtml + '</div>';
   }).join('');
 }
 
