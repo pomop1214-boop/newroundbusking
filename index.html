@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   :root{
     --cream:#FFF8F2; --ink:#2B2420; --ink-soft:#6E645C;
@@ -354,7 +355,7 @@
     <p class="error-msg" id="gate-error" hidden></p>
 
     <div class="admin-link-row">
-      <a href="#" id="edit-link">이미 제출했어요, 수정할래요</a>
+      <a href="#" id="edit-link">수정 · INST(MR) 제출</a>
       &nbsp;·&nbsp;
       <a href="#admin">관리자 페이지</a>
     </div>
@@ -379,6 +380,25 @@
     <div class="admin-link-row"><a href="#" id="lookup-back-link">← 처음으로</a></div>
   </div>
 
+  <!-- STEP 1-1-1: 무엇을 할지 선택 -->
+  <div id="step-lookup-menu" hidden>
+    <header>
+      <div class="eyebrow">🎤 N.ROUND 버스킹</div>
+      <h1><span id="menu-name"></span>님,<br>무엇을 하시겠어요?</h1>
+    </header>
+
+    <button class="choice-btn" id="btn-menu-inst" type="button">
+      <span class="emoji">🎵</span>
+      <span><b>확정된 곡의 INST를 제출할래요</b><p>점검 후 확정된 곡의 MR 파일을 올려요</p></span>
+    </button>
+    <button class="choice-btn" id="btn-menu-edit" type="button">
+      <span class="emoji">✏️</span>
+      <span><b>제출 곡을 수정할래요</b><p>선곡 내용이나 참여 여부를 바꿔요</p></span>
+    </button>
+
+    <div class="admin-link-row"><a href="#" id="menu-back-link">← 처음으로</a></div>
+  </div>
+
   <!-- STEP 1-1-2: 확정된 곡 MR 업로드 -->
   <div id="step-inst" hidden>
     <header>
@@ -389,7 +409,7 @@
 
     <div id="inst-upload-list"></div>
 
-    <button class="confirm-btn" id="btn-inst-continue" type="button">다음</button>
+    <button class="confirm-btn" id="btn-inst-continue" type="button">제출 완료</button>
     <div class="admin-link-row"><a href="#" id="inst-skip-link">나중에 할게요, 건너뛰기</a></div>
   </div>
 
@@ -567,6 +587,14 @@
       <div id="confirmed-list"></div>
     </div>
 
+    <div class="sub-card" id="inst-files-card">
+      <div class="sub-card-top">
+        <b>🎵 INST 제출 목록</b>
+        <button id="inst-download-all-btn" type="button" style="font-size:11.5px; font-weight:700; color:#fff; background:var(--mint-dark); border:none; padding:7px 14px; border-radius:999px; cursor:pointer;">전체 다운로드 (ZIP)</button>
+      </div>
+      <div id="inst-files-list"></div>
+    </div>
+
     <button class="refresh-btn" id="refresh-btn" type="button">🔄 새로고침</button>
     <div id="submissions-list"></div>
   </div>
@@ -591,7 +619,7 @@ try {
 const state = { name: '', experience: null, editingId: null, confirmedSongs: [], recordSongs: [] };
 
 /* ---------------- 스텝 전환 ---------------- */
-const steps = ['step-loading', 'step-closed', 'step-gate', 'step-lookup', 'step-inst', 'step-edit-choice', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
+const steps = ['step-loading', 'step-closed', 'step-gate', 'step-lookup', 'step-lookup-menu', 'step-inst', 'step-edit-choice', 'step-declined', 'step-experience', 'step-rules', 'step-songs', 'step-done'];
 function goToStep(id){
   steps.forEach(function(s){ document.getElementById(s).hidden = (s !== id); });
   window.scrollTo(0, 0);
@@ -718,13 +746,9 @@ btnLookup.addEventListener('click', async function(){
     renderRows();
     lookupError.hidden = true;
     document.getElementById('edit-choice-name').textContent = state.name;
+    document.getElementById('menu-name').textContent = state.name;
 
-    if(state.confirmedSongs.length > 0){
-      renderInstUploadList();
-      goToStep('step-inst');
-    } else {
-      goToStep('step-edit-choice');
-    }
+    goToStep('step-lookup-menu');
   }catch(err){
     lookupError.textContent = '조회에 실패했어요. 잠시 후 다시 시도해주세요.';
     lookupError.hidden = false;
@@ -732,6 +756,19 @@ btnLookup.addEventListener('click', async function(){
     btnLookup.disabled = false;
     btnLookup.textContent = '찾기';
   }
+});
+
+/* ---------------- STEP 1-1-1: 메뉴 선택 ---------------- */
+document.getElementById('btn-menu-inst').addEventListener('click', function(){
+  renderInstUploadList();
+  goToStep('step-inst');
+});
+document.getElementById('btn-menu-edit').addEventListener('click', function(){
+  goToStep('step-songs');
+});
+document.getElementById('menu-back-link').addEventListener('click', function(e){
+  e.preventDefault();
+  goToStep('step-gate');
 });
 
 /* ---------------- STEP 1-1-2: 확정된 곡 MR 업로드 ---------------- */
@@ -745,16 +782,23 @@ function syncRowsInstFromRecord(){
   });
 }
 
+function showInstDoneCard(){
+  const doneCardEl = document.querySelector('#step-done .done-card');
+  if(doneCardEl){
+    doneCardEl.querySelector('h2').textContent = 'MR 제출 완료!';
+    doneCardEl.querySelector('p').textContent = '확정곡 MR 파일이 저장됐어요. 무대에서 만나요!';
+  }
+}
+
 document.getElementById('btn-inst-continue').addEventListener('click', function(){
   syncRowsInstFromRecord();
-  document.getElementById('edit-choice-name').textContent = state.name;
-  goToStep('step-edit-choice');
+  showInstDoneCard();
+  goToStep('step-done');
 });
 document.getElementById('inst-skip-link').addEventListener('click', function(e){
   e.preventDefault();
   syncRowsInstFromRecord();
-  document.getElementById('edit-choice-name').textContent = state.name;
-  goToStep('step-edit-choice');
+  goToStep('step-lookup-menu');
 });
 
 /* ---------------- STEP 1-2: 참여 여부 변경 ---------------- */
@@ -917,6 +961,11 @@ function renderInstSection(item){
 function renderInstUploadList(){
   const listEl = document.getElementById('inst-upload-list');
   if(!listEl) return;
+
+  if(state.confirmedSongs.length === 0){
+    listEl.innerHTML = '<div class="empty-note">아직 확정된 곡이 없어요. 점검 후 다시 확인해주세요.</div>';
+    return;
+  }
 
   listEl.innerHTML = state.confirmedSongs.map(function(s){
     const typeLabel = s.type === 'duet' ? '듀엣' : '솔로';
@@ -1448,7 +1497,114 @@ function renderSubmissions(list){
   }).join('');
 
   renderConfirmedList(list);
+  renderInstFilesList(list);
 }
+
+function collectInstFiles(list){
+  const files = [];
+  list.forEach(function(sub){
+    if(sub.status === 'declined') return;
+    (sub.songs || []).forEach(function(s){
+      if(s.instUrl){
+        const typeLabel = s.type === 'duet' ? '듀엣' : '솔로';
+        files.push({
+          participant: sub.name,
+          title: s.title,
+          typeLabel: typeLabel,
+          typeClass: s.type === 'duet' ? 'duet' : 'solo',
+          url: s.instUrl,
+          fileName: s.instName || (s.title + '.mp3')
+        });
+      }
+    });
+  });
+  return files;
+}
+
+function renderInstFilesList(list){
+  const el = document.getElementById('inst-files-list');
+  if(!el) return;
+  const files = collectInstFiles(list);
+
+  if(files.length === 0){
+    el.innerHTML = '<div class="empty-note">아직 제출된 INST 파일이 없어요</div>';
+    return;
+  }
+
+  el.innerHTML = files.map(function(f){
+    return '<div class="confirmed-row">' +
+      '<b>' + escapeHtml(f.participant) + '</b>' +
+      '<span class="confirmed-slot ' + f.typeClass + ' done">' + f.typeLabel + ' · ' + escapeHtml(f.title) + '</span>' +
+      '<a href="' + escapeHtml(f.url) + '" target="_blank" rel="noopener" style="font-size:11px; color:var(--mint-dark); text-decoration:underline; margin-left:auto;">개별 다운로드</a>' +
+    '</div>';
+  }).join('');
+}
+
+document.getElementById('inst-download-all-btn').addEventListener('click', async function(){
+  const btn = this;
+  const files = collectInstFiles(lastSubmissions);
+
+  if(files.length === 0){
+    alert('다운로드할 INST 파일이 없어요.');
+    return;
+  }
+
+  if(typeof JSZip === 'undefined'){
+    alert('압축 기능을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침 해주세요.');
+    return;
+  }
+
+  btn.disabled = true;
+  const originalText = btn.textContent;
+
+  try{
+    const zip = new JSZip();
+    const usedNames = {};
+
+    for(let i = 0; i < files.length; i++){
+      const f = files[i];
+      btn.textContent = '압축 중… (' + (i + 1) + '/' + files.length + ')';
+
+      let res;
+      try{
+        res = await fetch(f.url);
+      }catch(fetchErr){
+        continue;
+      }
+      if(!res.ok) continue;
+      const blob = await res.blob();
+
+      let baseName = f.participant + '_' + f.typeLabel + '_' + f.fileName;
+      baseName = baseName.replace(/[\\/:*?"<>|]/g, '_');
+      if(usedNames[baseName] !== undefined){
+        usedNames[baseName]++;
+        const dot = baseName.lastIndexOf('.');
+        baseName = dot > 0
+          ? baseName.slice(0, dot) + '_' + usedNames[baseName] + baseName.slice(dot)
+          : baseName + '_' + usedNames[baseName];
+      } else {
+        usedNames[baseName] = 0;
+      }
+      zip.file(baseName, blob);
+    }
+
+    btn.textContent = '압축 파일 만드는 중…';
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'busking-inst-files.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }catch(err){
+    alert('전체 다운로드에 실패했어요. 개별 다운로드 링크를 이용해주세요.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = originalText;
+});
 
 function renderConfirmedList(list){
   const confirmedListEl = document.getElementById('confirmed-list');
